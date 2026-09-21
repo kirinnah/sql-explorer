@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: sql-explorer-db
+    environment:
+      POSTGRES_DB: university
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: 12345
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d university"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: sql-explorer-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/university
+      DB_USER: user
+      DB_PASSWORD: "12345"
+    stdin_open: true
+    tty: true
+
+volumes:
+  pgdata:
